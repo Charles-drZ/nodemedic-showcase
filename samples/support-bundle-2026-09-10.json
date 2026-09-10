@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1",
+  "generatedAt": "2026-09-10T06:15:29Z",
+  "nodeMedicVersion": "0.1.0-dev",
+  "notice": "Sanitized NodeMedic support bundle. Contains structured diagnostic data only; raw logs are not included. Inspect before sharing.",
+  "report": {
+    "overall": "UNHEALTHY",
+    "observations": [
+      {
+        "key": "docker.cli.available",
+        "status": "OK",
+        "value": "false",
+        "source": "docker",
+        "detail": "Docker CLI was not found in PATH"
+      },
+      {
+        "key": "docker.daemon.reachable",
+        "status": "UNAVAILABLE",
+        "source": "docker",
+        "detail": "Docker daemon cannot be checked because the Docker CLI is unavailable"
+      },
+      {
+        "key": "docker.version",
+        "status": "UNAVAILABLE",
+        "source": "docker",
+        "detail": "Docker version cannot be collected because the Docker CLI is unavailable"
+      },
+      {
+        "key": "host.os",
+        "status": "OK",
+        "value": "darwin",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.arch",
+        "status": "OK",
+        "value": "arm64",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.disk.total_bytes",
+        "status": "OK",
+        "value": "245107195904",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.disk.available_bytes",
+        "status": "OK",
+        "value": "20408213504",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.disk.available_percent",
+        "status": "OK",
+        "value": "8.3",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.disk.pressure",
+        "status": "OK",
+        "value": "WARNING",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.memory.total_bytes",
+        "status": "OK",
+        "value": "8589934592",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.memory.available_bytes",
+        "status": "OK",
+        "value": "1949483008",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.memory.available_percent",
+        "status": "OK",
+        "value": "22.7",
+        "source": "host-resources"
+      },
+      {
+        "key": "host.memory.pressure",
+        "status": "OK",
+        "value": "HEALTHY",
+        "source": "host-resources"
+      },
+      {
+        "key": "pi.container.discovery",
+        "status": "UNAVAILABLE",
+        "source": "scan",
+        "detail": "Pi Node container discovery was skipped because Docker is not operational"
+      },
+      {
+        "key": "pi.node_status.available",
+        "status": "UNAVAILABLE",
+        "source": "scan",
+        "detail": "node-status inspection requires a discovered, running Pi Node container"
+      },
+      {
+        "key": "network.local_probe.capability",
+        "status": "UNAVAILABLE",
+        "source": "scan",
+        "detail": "Local Pi port checks require a discovered Pi Node container"
+      }
+    ],
+    "findings": [
+      {
+        "id": "D001",
+        "severity": "ERROR",
+        "title": "Docker is unavailable",
+        "explanation": "NodeMedic cannot inspect the Pi Node container because the Docker CLI is not available on the host.",
+        "likelyCause": "Docker is not installed, is not in PATH, or the current environment cannot access the Docker CLI.",
+        "confidence": "HIGH",
+        "recommendedNext": "Install or restore Docker access, then rerun NodeMedic before troubleshooting Pi Node itself.",
+        "evidence": [
+          {
+            "key": "docker.cli.available",
+            "observed": "false",
+            "expected": "true",
+            "healthy": false
+          }
+        ]
+      },
+      {
+        "id": "D008",
+        "severity": "WARNING",
+        "title": "Disk space pressure",
+        "explanation": "Insufficient free disk space can destabilize Pi Node or prevent synchronization from progressing.",
+        "likelyCause": "Free space on the host filesystem is below the configured NodeMedic threshold.",
+        "confidence": "HIGH",
+        "recommendedNext": "Free disk space or move node data to a filesystem with more capacity, then rerun the scan.",
+        "evidence": [
+          {
+            "key": "host.disk.pressure",
+            "observed": "WARNING",
+            "expected": "HEALTHY",
+            "healthy": false
+          },
+          {
+            "key": "host.disk.available_percent",
+            "observed": "8.3",
+            "expected": "at or above configured threshold",
+            "healthy": false
+          }
+        ]
+      }
+    ]
+  }
+}

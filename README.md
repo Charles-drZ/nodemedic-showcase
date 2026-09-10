@@ -10,36 +10,71 @@ NodeMedic is a local-first diagnostics and reliability toolkit for Pi Network No
 
 A node can appear degraded for many different reasons: Docker state, service failures, local port exposure, router/ISP connectivity, CGNAT, storage pressure, memory pressure, sync state, or peer connectivity. Operators often have to correlate several tools and community reports before they can identify the actual cause.
 
-NodeMedic is designed to turn those separate observations into an actionable diagnosis.
+NodeMedic turns structured local observations into deterministic, evidence-backed findings with severity, confidence, likely cause, and a recommended next step.
 
-## What the first release will do
+## Real runtime evidence
 
-The first target is intentionally small:
+The first public runtime proof was captured on **September 10, 2026** from the real `0.1.0-dev` binary on macOS arm64.
 
-```bash
+```text
 $ nodemedic scan
+NODEMEDIC
+Overall: UNHEALTHY
 
-NodeMedic Diagnostic
+Core status
+Docker daemon:         UNAVAILABLE
+Pi Node container:     NOT OBSERVED
+Horizon:               NOT OBSERVED
+Authenticated peers:   NOT OBSERVED
+Disk pressure:         WARNING
+Memory pressure:       HEALTHY
+Port 31401:            NOT OBSERVED
+Port 31402:            NOT OBSERVED
+Port 31403:            NOT OBSERVED
 
-Overall health        DEGRADED
-Docker                HEALTHY
-Pi Node container     HEALTHY
-Incoming connectivity ERROR
-Disk                  HEALTHY
+Findings
 
-Likely cause
-External connectivity problem
+D001 [ERROR] — Docker is unavailable
+NodeMedic cannot inspect the Pi Node container because the Docker CLI is not available on the host.
+Confidence: HIGH
+Next: Install or restore Docker access, then rerun NodeMedic before troubleshooting Pi Node itself.
 
-Evidence
-✓ service is listening locally
-✓ Docker port mapping is present
-✕ external reachability failed
-
-Recommended next step
-Check router forwarding, firewall, ISP filtering, or CGNAT.
+D008 [WARNING] — Disk space pressure
+Insufficient free disk space can destabilize Pi Node or prevent synchronization from progressing.
+Confidence: HIGH
+Evidence:
+  x host.disk.pressure = WARNING (expected HEALTHY)
+  x host.disk.available_percent = 9.2 (expected at or above configured threshold)
+Next: Free disk space or move node data to a filesystem with more capacity, then rerun the scan.
 ```
 
-The final wording and evidence will come from the real implementation; the showcase will only publish runtime evidence once it exists.
+This is not a mock. It is output from the working binary. The host intentionally did **not** have Docker available, so Pi-container, Horizon, peer, and local Pi-port evidence remained `NOT OBSERVED` / `UNAVAILABLE` instead of being guessed.
+
+See [First real demo](DEMO.md) and the [sanitized sample support bundle](samples/support-bundle-2026-09-10.json).
+
+## What works today
+
+- local host resource collection on macOS/Linux
+- Docker availability and daemon evidence
+- Pi Node container discovery
+- official Pi Node `node-status` evidence integration
+- local Pi-port / Docker-mapping correlation
+- deterministic diagnostic rules
+- terminal and JSON reports
+- sanitized support-bundle preview/export
+- local `make install` / `make uninstall` workflow
+
+The working primary command is:
+
+```bash
+nodemedic scan
+```
+
+## What is not claimed yet
+
+The first public demo validates the real scan/report pipeline, but it is **not yet proof of a complete healthy Pi Node run**. External reachability and CGNAT diagnosis still require a real external probe, and historical restart-loop diagnosis requires local history.
+
+NodeMedic deliberately leaves unsupported evidence visible instead of inventing a diagnosis.
 
 ## Product layers
 
@@ -59,27 +94,27 @@ The final wording and evidence will come from the real implementation; the showc
 
 ## Architecture
 
-The planned local agent/CLI is written in Go and separates collection from diagnosis:
+The local CLI is implemented in Go and separates collection from diagnosis:
 
 ```text
-Collectors → observations → diagnostic rules → findings → reports
+Collectors → normalized observations → diagnostic rules → findings → reports
 ```
 
 See [Architecture](ARCHITECTURE.md).
 
 ## Roadmap
 
-NodeMedic is currently in **M0 — Product & Technical Feasibility**.
+NodeMedic is currently in **M1 — Local Node Doctor** development.
 
-The first public-quality milestone is **M1 — Local Node Doctor**, centered on a real `nodemedic scan` command and 8–10 tested diagnostic scenarios.
+The next proof point is a real Pi Node host run covering container discovery, `node-status`, peer/sync evidence, and Pi-port observations end-to-end.
 
 See [Roadmap](ROADMAP.md) and [Development status](STATUS.md).
 
 ## Public showcase policy
 
-This repository documents the product, architecture, screenshots/demos, release progress, and selected engineering decisions. The private engineering repository remains the implementation source of truth during early validation.
+This repository documents the product, architecture, runtime evidence, release progress, and selected engineering decisions. The private engineering repository remains the implementation source of truth during early validation.
 
-The showcase will not pretend unfinished features exist: screenshots, sample reports, and demos are added only after they are generated by working code.
+The showcase does not present mocks as implemented behavior. Demo artifacts are labeled with their actual environment and limitations.
 
 ## Disclaimer
 

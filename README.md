@@ -1,16 +1,127 @@
+[← Developer profile](https://github.com/Charles-drZ)
+
 # NodeMedic
 
-**Pi Node Doctor & Watchdog**
+**Local-first diagnostics and reliability tooling for Pi Network Nodes.**
 
-NodeMedic is a local-first diagnostics and reliability toolkit for Pi Network Node operators.
+> Diagnose what is actually wrong, show the evidence, and avoid pretending that unavailable data is known.
 
-> Know why your Pi Node is not healthy.
+NodeMedic started as a local Node Doctor and has grown into a broader reliability product: deterministic diagnostics, persisted health history, a local dashboard and API, recurring health checks, managed Linux operation, release packaging, and the foundations of an outbound-only Cloud/Agent model.
 
-## The problem
+The implementation repository remains private during product validation. This public repository tracks verified behavior, architecture, runtime evidence, and selected engineering decisions without publishing wallet-sensitive, infrastructure-sensitive, or proprietary implementation details.
 
-A node can appear degraded for many different reasons: Docker state, service failures, local port exposure, router/ISP connectivity, CGNAT, storage pressure, memory pressure, sync state, or peer connectivity. Operators often have to correlate several tools and community reports before they can identify the actual cause.
+## Current engineering scope
 
-NodeMedic turns structured local observations into deterministic, evidence-backed findings with severity, confidence, likely cause, and a recommended next step.
+### Local Doctor
+
+The working Go binary collects host, Docker, Pi Node, networking, port, storage, and resource observations and evaluates deterministic diagnostic rules.
+
+Findings include:
+
+- severity and confidence;
+- concrete supporting evidence;
+- likely cause;
+- a recommended next step;
+- explicit `NOT OBSERVED` / unavailable states when evidence cannot be collected.
+
+Primary local workflow:
+
+```bash
+nodemedic scan
+```
+
+Reports are available for terminal use and structured JSON processing, with a sanitized support-bundle path for sharing diagnostic evidence without blindly exporting the host environment.
+
+### Local reliability loop
+
+NodeMedic now has a real local product surface around the Doctor engine:
+
+- versioned SQLite scan history;
+- bounded retention;
+- health-transition persistence;
+- optional scheduled scans;
+- a loopback-only local HTTP API;
+- an embedded responsive dashboard served from the Go binary;
+- manual diagnosis from the dashboard;
+- restart-safe local history;
+- serialized manual and scheduled Doctor execution.
+
+The dashboard renders the real Doctor contracts. It does not fabricate uptime, external reachability, incidents, cloud state, or other data that NodeMedic has not actually observed.
+
+### Managed Linux runtime
+
+On Linux, NodeMedic can run as a rootless `systemd --user` service.
+
+The managed lifecycle includes install, upgrade, start, stop, restart, status, journal-backed logs, uninstall, and explicit data purge behavior. Normal upgrade and uninstall preserve local SQLite history, and the service remains loopback-only by default.
+
+The runtime deliberately avoids automatic privilege escalation, Docker-group mutation, public listeners, remote shell capability, and automatic repair.
+
+### Release engineering
+
+The private engineering repository includes deterministic release packaging for the initial multi-platform matrix, including static binaries, linker-injected version information, SHA-256 manifests, packaging validation, and platform-safe shutdown behavior.
+
+Cross-compilation is treated as build evidence, not as a substitute for real-host runtime certification.
+
+## Cloud and Agent foundation
+
+The next product layer is designed around an **outbound-only Agent**. The local Doctor remains independently useful even if Cloud services are unavailable.
+
+Implemented foundation work currently covers:
+
+- Pi Platform identity verification at the server boundary;
+- Pi Browser authentication bootstrap;
+- short-lived NodeMedic-owned browser sessions;
+- account-bound node registration;
+- short-lived, single-use Agent enrollment tokens;
+- separate Agent credentials rather than reusing browser or Pi credentials;
+- interactive local Agent enrollment with protected credential storage;
+- authenticated one-shot Agent heartbeat;
+- revocation/supersession boundaries for Agent instances.
+
+This is deliberately staged work. **Cloud state synchronization is not claimed as complete, and no production Cloud deployment is claimed here.** Heartbeat represents authenticated Agent liveness, not Pi Node health.
+
+## Architecture
+
+The local diagnosis path keeps evidence collection separate from interpretation:
+
+```text
+Collectors
+    ↓
+Normalized observations
+    ↓
+Deterministic diagnostic rules
+    ↓
+Findings + report
+    ↓
+SQLite history / local API / dashboard / scheduled checks
+```
+
+The Cloud direction adds a separate trust boundary rather than exposing the local NodeMedic service inbound:
+
+```text
+Pi identity → NodeMedic browser session → node registration
+                                      ↓
+                              one-time enrollment
+                                      ↓
+Local Agent credential → authenticated outbound communication
+```
+
+The local Doctor does not depend on Cloud account, billing, or network availability to perform local diagnosis.
+
+## Security boundaries
+
+NodeMedic is intentionally conservative around a system that may share a host with a blockchain node.
+
+Key principles include:
+
+- no Pi wallet seed phrase or private-key access;
+- read-only diagnosis as the local baseline;
+- loopback-only local HTTP service;
+- no automatic repair or remote shell;
+- browser, Pi, and Agent credentials remain separate scopes;
+- enrollment secrets are not designed for normal command-line argument or environment-variable exposure;
+- raw logs and complete environment dumps are not default Cloud payloads;
+- stale or missing evidence must remain visible rather than being converted into confident health claims.
 
 ## Real runtime evidence
 
@@ -31,90 +142,49 @@ Memory pressure:       HEALTHY
 Port 31401:            NOT OBSERVED
 Port 31402:            NOT OBSERVED
 Port 31403:            NOT OBSERVED
-
-Findings
-
-D001 [ERROR] — Docker is unavailable
-NodeMedic cannot inspect the Pi Node container because the Docker CLI is not available on the host.
-Confidence: HIGH
-Next: Install or restore Docker access, then rerun NodeMedic before troubleshooting Pi Node itself.
-
-D008 [WARNING] — Disk space pressure
-Insufficient free disk space can destabilize Pi Node or prevent synchronization from progressing.
-Confidence: HIGH
-Evidence:
-  x host.disk.pressure = WARNING (expected HEALTHY)
-  x host.disk.available_percent = 9.2 (expected at or above configured threshold)
-Next: Free disk space or move node data to a filesystem with more capacity, then rerun the scan.
 ```
 
-This is not a mock. It is output from the working binary. The host intentionally did **not** have Docker available, so Pi-container, Horizon, peer, and local Pi-port evidence remained `NOT OBSERVED` / `UNAVAILABLE` instead of being guessed.
+The host intentionally did not have Docker available. NodeMedic therefore left Pi-container, Horizon, peer, and Pi-port evidence unobserved instead of guessing a result.
 
 See [First real demo](DEMO.md) and the [sanitized sample support bundle](samples/support-bundle-2026-09-10.json).
 
-## What works today
+## What this project demonstrates
 
-- local host resource collection on macOS/Linux
-- Docker availability and daemon evidence
-- Pi Node container discovery
-- official Pi Node `node-status` evidence integration
-- local Pi-port / Docker-mapping correlation
-- deterministic diagnostic rules
-- terminal and JSON reports
-- sanitized support-bundle preview/export
-- local `make install` / `make uninstall` workflow
+NodeMedic combines several engineering concerns inside one product:
 
-The working primary command is:
+- Go application and systems development;
+- deterministic diagnostics and explicit uncertainty;
+- local persistence and migration-safe history;
+- HTTP API and embedded product UI;
+- scheduler and service lifecycle design;
+- Linux rootless operation;
+- release artifact engineering;
+- authentication and credential-scope boundaries;
+- staged local-to-cloud architecture;
+- security documentation and threat modeling;
+- validation that distinguishes build support from real runtime proof.
 
-```bash
-nodemedic scan
-```
-
-## What is not claimed yet
-
-The first public demo validates the real scan/report pipeline, but it is **not yet proof of a complete healthy Pi Node run**. External reachability and CGNAT diagnosis still require a real external probe, and historical restart-loop diagnosis requires local history.
-
-NodeMedic deliberately leaves unsupported evidence visible instead of inventing a diagnosis.
-
-## Product layers
+## Product direction
 
 **Doctor** diagnoses why a node is unhealthy.
 
-**Watchdog** will later detect outages and degradation over time.
+**Watchdog** tracks degradation and health changes over time.
 
-**Optimizer** may later help operators understand reliability and operating efficiency.
+**Cloud** can later add remote visibility and carefully bounded monitoring without turning the Agent into an inbound administration surface.
 
-## Design principles
+**Optimizer** remains a later hypothesis for helping operators understand reliability and operating efficiency.
 
-- Local diagnostics work without an account.
-- The MVP is read-only.
-- Findings show evidence and confidence, not opaque guesses.
-- NodeMedic never requires a Pi wallet seed phrase or private key.
-- Paid/cloud features come only after the free local Doctor proves useful.
+Paid or Pi-native features come after the free local product proves useful.
 
-## Architecture
+## Public boundary
 
-The local CLI is implemented in Go and separates collection from diagnosis:
+This repository does not publish the private source tree, deployable Cloud configuration, credentials, internal test fixtures, private infrastructure, exact production endpoints, wallet material, or raw host data.
 
-```text
-Collectors → normalized observations → diagnostic rules → findings → reports
-```
+Public claims are intentionally narrower than private implementation when validation is incomplete. Mocks and architecture plans are not presented as production behavior.
 
-See [Architecture](ARCHITECTURE.md).
+## Project status
 
-## Roadmap
-
-NodeMedic is currently in **M1 — Local Node Doctor** development.
-
-The next proof point is a real Pi Node host run covering container discovery, `node-status`, peer/sync evidence, and Pi-port observations end-to-end.
-
-See [Roadmap](ROADMAP.md) and [Development status](STATUS.md).
-
-## Public showcase policy
-
-This repository documents the product, architecture, runtime evidence, release progress, and selected engineering decisions. The private engineering repository remains the implementation source of truth during early validation.
-
-The showcase does not present mocks as implemented behavior. Demo artifacts are labeled with their actual environment and limitations.
+The Local Doctor and the local reliability loop are working engineering systems. Release validation and real Pi Node host proof remain important gates. Cloud/Agent work is being built incrementally behind explicit trust boundaries; production Cloud sync is not yet claimed.
 
 ## Disclaimer
 

@@ -1,14 +1,16 @@
 # NodeMedic Public Roadmap
 
+The roadmap tracks product proof, not just implementation order. Later-layer work can be developed in parallel without weakening earlier release gates.
+
 ## M0 — Product & Technical Feasibility
 
-**Completed foundation.**
+**Completed.**
 
-Defined the diagnostic model, security boundaries, initial Pi Node failure scenarios, local-first architecture, and private-engineering/public-showcase split.
+Defined the local-first diagnostic model, initial Pi Node failure scenarios, security boundaries, public/private repository split, and evidence-backed diagnosis principles.
 
 ## M1 — Local Node Doctor
 
-**Active.**
+**Implemented core; release validation remains active.**
 
 Working command:
 
@@ -16,16 +18,14 @@ Working command:
 nodemedic scan
 ```
 
-Implemented:
+Implemented foundations include host/Docker/Pi Node evidence collection, official `node-status` integration, local Pi-port observations, deterministic diagnostic rules, terminal/JSON reporting, sanitized support bundles, installation tooling, automated tests, and multi-platform release packaging.
 
-- host/Docker/Pi Node evidence collection
-- official `node-status` integration
-- local Pi-port and Docker-mapping observations
-- deterministic diagnostic rules
-- terminal and JSON reports
-- sanitized support-bundle export
-- local install/uninstall workflow
-- real runtime demo on macOS arm64
+Remaining proof is intentionally narrower than the amount of code already implemented:
+
+- real Pi Node host validation end-to-end;
+- combined container + `node-status` + peer/sync + local-port evidence;
+- external reachability evidence before external-connectivity or CGNAT diagnosis is claimed;
+- final release-validation matrix and `v0.1.0` boundary.
 
 Public evidence:
 
@@ -35,25 +35,49 @@ Public evidence:
 - [development status](STATUS.md)
 - [draft v0.1.0 release notes](RELEASE_NOTES_v0.1.0.md)
 
-Remaining before treating M1 as fully proven:
+## M2 — Local Reliability Loop
 
-- run the Doctor on a real Pi Node host end-to-end
-- validate Pi container + `node-status` + peer/sync + local port evidence together
-- keep external reachability/CGNAT claims disabled until an external probe exists
-- keep restart-loop claims disabled until history exists
+**Working implementation exists.**
 
-## M2 — Local History & Dashboard
+The Doctor has been extended into a local reliability product with:
 
-Add local history, incident timeline, and a browser-based local dashboard.
+- SQLite-backed scan history;
+- bounded retention;
+- health-transition records;
+- optional recurring scans;
+- loopback-only local API;
+- embedded responsive dashboard;
+- rootless Linux `systemd --user` service operation;
+- history-preserving upgrade/uninstall behavior.
 
-## M3 — NodeMedic Watch
+This work is developed in parallel and does not replace the remaining M1 real-host validation gate.
 
-Validate optional remote monitoring, external reachability checks, incident detection, and notifications.
+## M3 — Cloud / Watch Foundation
 
-## M4 — Pi-native Integration
+**Foundation in progress. No production Cloud deployment claimed.**
 
-If real usage validates the product, add Pi authentication, Pi Browser experience, Pi payments, and suitable SoloHost integration.
+The architecture keeps the local Agent outbound-only and preserves the local Doctor when Cloud is unavailable.
+
+Implemented foundation currently includes:
+
+- Pi identity verification;
+- Pi Browser authentication bootstrap;
+- short-lived NodeMedic browser sessions;
+- account-bound node registration;
+- single-use Agent enrollment;
+- protected local Agent credentials;
+- authenticated Agent heartbeat.
+
+Next proof points include completing the state-synchronization contract, durable Cloud persistence, external-probe behavior, freshness/offline semantics, and production deployment validation.
+
+Remote repair and inbound Agent administration remain outside the intended boundary.
+
+## M4 — Product Expansion & Pi-native Value
+
+Later hypotheses include remote monitoring, notifications, multi-node views, Pi-native paid features, and suitable ecosystem integrations.
+
+These should be driven by real operator usage rather than implemented solely because the platform allows them.
 
 ## Principle
 
-Cloud and monetization come after the local Doctor proves useful to real Pi Node operators.
+The free local Doctor must remain useful on its own. Cloud, monitoring, and monetization are additional product layers, not dependencies for basic diagnosis.

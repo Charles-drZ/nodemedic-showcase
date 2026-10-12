@@ -6,7 +6,7 @@
 
 > Diagnose what is actually wrong, show the evidence, and avoid pretending that unavailable data is known.
 
-NodeMedic started as a local Node Doctor and has grown into a broader reliability product: deterministic diagnostics, persisted health history, a local dashboard and API, recurring health checks, managed Linux operation, release packaging, and the foundations of an outbound-only Cloud/Agent model.
+NodeMedic started as a local Node Doctor and has grown into a broader reliability product: deterministic diagnostics, persisted health history, a local dashboard and API, recurring health checks, managed Linux operation, release packaging, and a working outbound-only Agent/Cloud product path with Pi Browser remote visibility.
 
 The implementation repository remains private during product validation. This public repository tracks verified behavior, architecture, runtime evidence, and selected engineering decisions without publishing wallet-sensitive, infrastructure-sensitive, or proprietary implementation details.
 
@@ -62,23 +62,29 @@ The private engineering repository includes deterministic release packaging for 
 
 Cross-compilation is treated as build evidence, not as a substitute for real-host runtime certification.
 
-## Cloud and Agent foundation
+## Remote Pi Browser and Agent path
 
-The next product layer is designed around an **outbound-only Agent**. The local Doctor remains independently useful even if Cloud services are unavailable.
+NodeMedic now has a working remote product path built around an **outbound-only Agent**. The local Doctor remains independently useful when Cloud services are unavailable.
 
-Implemented foundation work currently covers:
+Implemented and physically accepted product behavior includes:
 
 - Pi Platform identity verification at the server boundary;
-- Pi Browser authentication bootstrap;
-- short-lived NodeMedic-owned browser sessions;
+- Pi Browser authentication and short-lived NodeMedic-owned browser sessions;
 - account-bound node registration;
 - short-lived, single-use Agent enrollment tokens;
 - separate Agent credentials rather than reusing browser or Pi credentials;
 - interactive local Agent enrollment with protected credential storage;
-- authenticated one-shot Agent heartbeat;
-- revocation/supersession boundaries for Agent instances.
+- controlled **Reconnect Agent** flow for an existing node;
+- autonomous in-process Agent heartbeat;
+- autonomous diagnostic-state synchronization using the existing Doctor pipeline;
+- bounded retry/backoff, timeout, cancellation, freshness and shutdown behavior;
+- privacy-safe Cloud projection rather than raw host logs or observations;
+- a mobile-first Pi Browser Overview surface;
+- remote Doctor detail backed only by allowlisted diagnostic evidence;
+- explicit waiting, stale, unavailable, incomplete and error states;
+- production acceptance covering Agent enrollment/reconnect, unattended heartbeat/state freshness, Cloud outage/recovery and bounded shutdown.
 
-This is deliberately staged work. **Cloud state synchronization is not claimed as complete, and no production Cloud deployment is claimed here.** Heartbeat represents authenticated Agent liveness, not Pi Node health.
+The remote browser remains read-only with respect to the local machine: there is no inbound Agent command channel, remote shell, browser-triggered scan, automatic repair, or Cloud-to-Agent control plane.
 
 ## Architecture
 
@@ -96,7 +102,7 @@ Findings + report
 SQLite history / local API / dashboard / scheduled checks
 ```
 
-The Cloud direction adds a separate trust boundary rather than exposing the local NodeMedic service inbound:
+The remote product path adds a separate trust boundary rather than exposing the local NodeMedic service inbound:
 
 ```text
 Pi identity → NodeMedic browser session → node registration
@@ -159,22 +165,23 @@ NodeMedic combines several engineering concerns inside one product:
 - scheduler and service lifecycle design;
 - Linux rootless operation;
 - release artifact engineering;
-- authentication and credential-scope boundaries;
-- staged local-to-cloud architecture;
+- authentication, enrollment/reconnect and credential-scope boundaries;
+- privacy-safe remote diagnostic projection and Pi Browser product UX;
+- physically validated local-to-Cloud Agent architecture;
 - security documentation and threat modeling;
 - validation that distinguishes build support from real runtime proof.
 
 ## Product direction
 
-**Doctor** diagnoses why a node is unhealthy.
+**Doctor** diagnoses why a node is unhealthy locally and now also exposes privacy-bounded remote diagnostic detail through Pi Browser.
 
-**Watchdog** tracks degradation and health changes over time.
+**Watchdog** tracks degradation and health changes over time; the Agent can autonomously refresh heartbeat and diagnostic state without making Cloud a prerequisite for local diagnosis.
 
-**Cloud** can later add remote visibility and carefully bounded monitoring without turning the Agent into an inbound administration surface.
+**Cloud / Pi Browser** provides authenticated remote visibility through an outbound-only Agent model while deliberately excluding inbound administration authority.
 
 **Optimizer** remains a later hypothesis for helping operators understand reliability and operating efficiency.
 
-Paid or Pi-native features come after the free local product proves useful.
+Paid or Pi-native features come after the free/local and remote-monitoring value is proven useful.
 
 ## Public boundary
 
@@ -184,7 +191,9 @@ Public claims are intentionally narrower than private implementation when valida
 
 ## Project status
 
-The Local Doctor and the local reliability loop are working engineering systems. Release validation and real Pi Node host proof remain important gates. Cloud/Agent work is being built incrementally behind explicit trust boundaries; production Cloud sync is not yet claimed.
+The Local Doctor, local reliability loop, remote Pi Browser product surface, Agent enrollment/reconnect, and autonomous outbound heartbeat/state synchronization are working engineering systems.
+
+The Agent/Cloud path has passed bounded physical production acceptance for enrollment, reconnect, unattended state freshness, outage/recovery and shutdown behavior. NodeMedic still does **not** claim remote remediation, inbound commands, arbitrary host administration, or unrestricted telemetry collection.
 
 ## Disclaimer
 

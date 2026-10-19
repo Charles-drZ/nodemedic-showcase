@@ -4,6 +4,8 @@
 
 **Local-first diagnostics and reliability tooling for Pi Network Nodes.**
 
+**Focus:** Go · Linux · diagnostics · reliability · Docker · systemd · Agent/Cloud architecture
+
 > Diagnose what is actually wrong, show the evidence, and avoid pretending that unavailable data is known.
 
 NodeMedic started as a local Node Doctor and has grown into a broader reliability product: deterministic diagnostics, persisted health history, a local dashboard and API, recurring health checks, managed Linux operation, release packaging, and a working outbound-only Agent/Cloud product path with Pi Browser remote visibility.
@@ -198,3 +200,9 @@ The Agent/Cloud path has passed bounded physical production acceptance for enrol
 ## Disclaimer
 
 NodeMedic is an independent project and is not affiliated with or endorsed by Pi Network or the Pi Core Team.
+
+
+## Follow the work
+
+For accepted milestones, new public case studies and short engineering notes, follow **[@Charles-drZ](https://github.com/Charles-drZ)**.
+
